@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.IO;
+using Microsoft.AspNetCore;
 using Web;
 
 namespace Startup
@@ -14,24 +15,33 @@ namespace Startup
             CreateHostBuilder(args).Build().Run();
         }
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
+        public static IWebHostBuilder CreateHostBuilder(string[] args) =>
+            WebHost
+                .CreateDefaultBuilder(args)
+                .UseStartup<Web.Startup>()
                 .ConfigureServices(services =>
                 {
                     services.AddSingleton<INonUiDependencyRegistry, NonUiDependencyRegistry>();
-                })
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Web.Startup>();
                 });
 
         private static void MoveToProperDirectory()
         {
             if (IsWwwrootPresent()) return;
-
+            
             var parentDirectory = Directory.GetParent(Directory.GetCurrentDirectory()).FullName;
-            var webAbbDirectory = Path.Combine(parentDirectory, "netcoreapp3.1");
-            Directory.SetCurrentDirectory(webAbbDirectory);
+
+            while (true)
+            {
+                var webAbbDirectory = Path.Combine(parentDirectory, nameof(Web));
+                
+                if (Directory.Exists(webAbbDirectory))
+                {
+                    Directory.SetCurrentDirectory(webAbbDirectory);
+                    return;
+                }
+
+                parentDirectory = Directory.GetParent(parentDirectory).FullName;
+            }
         }
 
         private static bool IsWwwrootPresent()
