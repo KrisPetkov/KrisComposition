@@ -1,8 +1,6 @@
 ﻿using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.IO;
-using Microsoft.AspNetCore;
 using Web;
 
 namespace Startup
@@ -15,14 +13,10 @@ namespace Startup
             CreateHostBuilder(args).Build().Run();
         }
 
-        public static IWebHostBuilder CreateHostBuilder(string[] args) =>
-            WebHost
+        private static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host
                 .CreateDefaultBuilder(args)
-                .UseStartup<Web.Startup>()
-                .ConfigureServices(services =>
-                {
-                    services.AddSingleton<INonUiDependencyRegistry, NonUiDependencyRegistry>();
-                });
+                .ConfigureWebHostDefaults(webHost => webHost.UseStartup<Web.Startup>());
 
         private static void MoveToProperDirectory()
         {
