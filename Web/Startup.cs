@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -8,11 +10,8 @@ namespace Web
 {
     public class Startup
     {
-        private readonly INonUiDependencyRegistry _nonUiDependencyRegistry;
-
-        public Startup(IConfiguration configuration, INonUiDependencyRegistry nonUiDependencyRegistry)
+        public Startup(IConfiguration configuration)
         {
-            _nonUiDependencyRegistry = nonUiDependencyRegistry;
             Configuration = configuration;
         }
 
@@ -23,7 +22,23 @@ namespace Web
         {
             services.AddControllersWithViews();
 
-            _nonUiDependencyRegistry.RegisterAllNonUiDependencies(services);
+            RegisterNonUiDependencies(services);
+        }
+
+        private static void RegisterNonUiDependencies(IServiceCollection services)
+        {
+            var modules = AppDomain
+                .CurrentDomain
+                .GetAssemblies()
+                .SelectMany(assembly => assembly.GetTypes())
+                .Where(type => type.GetInterfaces().Contains(typeof(INonUiDependencyRegistry)))
+                .Select(Activator.CreateInstance)
+                .Cast<INonUiDependencyRegistry>();
+
+            foreach (var module in modules)
+            {
+                module.RegisterAllNonUiDependencies(services);
+            }
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
